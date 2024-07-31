@@ -1,0 +1,300 @@
+// ==UserScript==
+// @name         A|v1 Ships 3D (MOD-MENU)
+// @description  Best Ships3D Hack
+// @author       Batman
+// @match        *://yp3d.com/ships3d/*
+// @icon         https://cdn.discordapp.com/icons/1001610268163461241/cfd60947d261fb4e2c34af6604ed0f69.webp?size=160
+// @grant        none
+// ==/UserScript==
+
+document.addEventListener("keydown", function(e) {
+    if (e.key == '\\') {
+        let d = document.querySelector('#menu');
+        if (d.style.display == 'none') {
+            d.style.display = "block";
+        } else {
+            d.style.display = "none";
+        }
+    }
+});
+
+window.API = {
+    THREE: window.THREE,
+    scene: null,
+    gameClient: {},
+    AmbientLight: null,
+    DirectionalLight: null,
+    ocean: null
+};
+
+delete window.THREE;
+var done = false;
+
+WeakMap.prototype.set = new Proxy(WeakMap.prototype.set, {
+    apply(target, thisArgs, [object]) {
+
+        if (object && typeof object === 'object' && object.type !== 'BufferGeometry' && object.type !== 'PlaneGeometry') {
+            if (object.type == 'Scene') {
+                API.scene = object;
+                for (let index = 0; index < API.scene.children.length; index++) {
+                    if (API.scene.children[index].name === 'ocean') {
+                        API.ocean = API.scene.children[index];
+                    }
+                    if (API.scene.children[index].type === 'DirectionalLight') {
+                        API.DirectionalLight = API.scene.children[index];
+                    }
+                    if (API.scene.children[index].type === 'AmbientLight') {
+                        API.AmbientLight = API.scene.children[index];
+                    }
+                }
+
+            }
+        }
+
+        return Reflect.apply(...arguments);
+    }
+});
+
+function ShipProxy(obj, propName, callback) {
+    obj[propName] = new Proxy(obj[propName], {
+        apply: function(target, thisArg, argumentsList) {
+            callback(...argumentsList);
+            return Reflect.apply(target, thisArg, argumentsList);
+        }
+    });
+}
+
+ShipProxy(Object, "defineProperty", (...object) => {
+
+    if (object.length === 3 && object[1] === "getCollectionLengths" && !API.gameClient.hasOwnProperty('gameClient')) {
+        API.gameClient = object[0];
+    }
+});
+
+window.ShipsAPI = API;
+let inHTML = `
+<div style="z-index:999999; color:white; position:fixed; top:20px; left:20px; padding:20px; height:350px; width:230px; background:rgba(0,0,0,0.9); border-radius:8px; font-family:sans-serif;" id="menu">
+  <h2 style="color:white; text-align:center; margin-bottom:10px;" >BlackAbyss</h2>
+  <ul style="display:flex; flex-direction:column; align-items:left; min-height:230px; height:280px; overflow-y:auto; list-style:none; padding:0;">
+    <li style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Tele-Kill</li>
+        <li style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">GodMode</li>
+            <li style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Semi-Immuinity</li>
+                <li style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Fly(v2)</li>
+                    <li style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">3rd Person</li>
+                        <li style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Better Graphics</li>
+                            <li style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Crash-Current-Server</li>
+    <li id="p-reset" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Teleport-Spawn</li>
+        <li id="autos" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Auto-Safety</li>
+        <li id="fly" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Fly</li>
+    <li id="speed" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Speed</li>
+    <li id="fast-swim" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Fast-Swim</li>
+    <li id="low-gravity" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Low-Gravity</li>
+    <li id="high-jump" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">High-Jump</li>
+    <li id="float" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Float</li>
+    <li id="dolphin" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Dolphin-Mode</li>
+    <li id="highlight-weapons" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Highlights</li>
+    <li id="spectate" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Spectate</li>
+    <li id="hide-ui" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Hide-UI</li>
+    <li id="crosshair1" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Crosshair-Regular</li>
+    <li id="crosshair2" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">Crosshair-Advanced</li>
+    <li id="nomap" style="background-color:#222; margin-bottom:5px; border-radius:5px; padding:8px 10px;">No Map</li>
+    <p style="text-align:center; font-size:10px; color:#fff; font-weight:bold;">help from herobrine</p>
+  </ul>
+</div>
+`;
+
+
+let elem = document.createElement("div");
+elem.innerHTML = inHTML;
+document.body.appendChild(elem);
+function Dolphin() {
+    alert("Toggle: Hold Shift-Key");
+    let originalMathSqrt = Math.sqrt;
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Shift') {
+            Math.sqrt = function(value) {
+                return 1;
+            };
+        }
+    });
+
+    document.addEventListener('keyup', function(event) {
+        if (event.key === 'Shift') {
+            Math.sqrt = originalMathSqrt;
+        }
+    });
+}
+document.querySelector("#dolphin").addEventListener("click", Dolphin);
+
+function HighlightWeapons() {
+    const wireFrame = true;
+    const original_push = Array.prototype.push;
+    Array.prototype.push = function(...args) {
+        original_push.apply(this, args);
+        if (args[0] && args[0].material && args[0].type == "SkinnedMesh") {
+            if (wireFrame) {
+                args[0].material.wireframe = true;
+            }
+            args[0].material.alphaTest = -1;
+            args[0].material.wireframeLinewidth = 0.1;
+            args[0].material.depthTest = true;
+            args[0].material.fog = false;
+            args[0].material.color.r = 255;
+            args[0].material.color.g = 255;
+            args[0].material.color.b = 255;
+        }
+    };
+}
+document.querySelector("#highlight-weapons").addEventListener("click", HighlightWeapons);
+
+function Crosshair() {
+    Math.trunc = function(x) {
+        return x >= 999999999999999999999999 ? Math.floor(x) + 100 : Math.ceil(x);
+    };
+
+    let inHTML23 = `
+    <div style="position: fixed; top: 50%; left: 50.2%; transform: translate(-50%, -50%); z-index: 9999999;">
+      <div style="background: rgba(0, 0, 0, 0.1); width: 100px; height: 100px; border-radius: 50%; border: 2px solid #FFF; display: flex; justify-content: center; align-items: center;">
+        <img src="https://i.postimg.cc/xdxYhM1M/image.png" style="z-index:9999999; height: 100%;">
+      </div>
+    </div>
+  `;
+    let elem2 = document.createElement("div2");
+    elem2.innerHTML = inHTML23;
+    top.document.body.appendChild(elem2);
+}
+document.querySelector("#crosshair1").addEventListener("click", Crosshair);
+
+function Crosshair2() {
+    Math.trunc = function(x) {
+        return x >= 999999999999999999999999 ? Math.floor(x) + 100 : Math.ceil(x);
+    };
+
+    let inHTML23 = `
+    <div style="position: fixed; top: 50%; left: 50.2%; transform: translate(-50%, -50%); z-index: 9999999;">
+      <div style="background: rgba(0, 0, 0, 0.1); backdrop-filter: contrast(1000%) invert(1); width: 100px; height: 100px; border-radius: 50%; border: 2px solid #FFF; display: flex; justify-content: center; align-items: center;">
+        <img src="https://i.postimg.cc/xdxYhM1M/image.png" style="z-index:9999999; height: 100%;">
+      </div>
+    </div>
+  `;
+    let elem2 = document.createElement("div2");
+    elem2.innerHTML = inHTML23;
+    top.document.body.appendChild(elem2);
+}
+document.querySelector("#crosshair2").addEventListener("click", Crosshair2);
+
+function HidePlayerNames() {
+    let roundOverride = true;
+
+    document.addEventListener("keyup", function(event) {
+        if (event.key === "l") {
+            roundOverride = !roundOverride;
+            if (roundOverride) {
+                Math.round = function(value) {
+                    return 1;
+                };
+            } else {
+                Math.round = Math._round;
+            }
+        }
+    });
+
+    if (roundOverride) {
+        Math._round = Math.round;
+        Math.round = function(value) {
+            return 1;
+        };
+    }
+}
+document.querySelector("#hide-ui").addEventListener("click", HidePlayerNames);
+
+window.intersectingPartialStateMsg = false;
+window.toggleIntersectingPartialStateMsg = function() {
+    intersectingPartialStateMsg = !intersectingPartialStateMsg;
+};
+
+const h = {
+    apply: function(target, thisArgs, argumentsList) {
+        if (argumentsList[0].t === 'ms' && intersectingPartialStateMsg) {
+            argumentsList[0] = new Object;
+        };
+        return target.apply(thisArgs, argumentsList)
+    }
+};
+
+function Speed() {
+    toggleIntersectingPartialStateMsg();
+    ShipsAPI.gameClient.gameClient.gameSocket.sendMessage = new Proxy(API.gameClient.gameClient.gameSocket.sendMessage, h);
+    window.ShipsAPI.gameClient.gameClient.sailorMe.maxSpeed === 3 ? window.ShipsAPI.gameClient.gameClient.sailorMe.maxSpeed = 20 : window.ShipsAPI.gameClient.gameClient.sailorMe.maxSpeed = 3;
+}
+
+document.querySelector("#speed").addEventListener("click", Speed);
+
+function Float() {
+    window.ShipsAPI.gameClient.gameClient.sailorMe.gravity = 0;
+}
+document.querySelector("#float").addEventListener("click", Float);
+
+function FastSwim() {
+    window.ShipsAPI.gameClient.gameClient.sailorMe.swimmingSpeed = 30;
+}
+document.querySelector("#fast-swim").addEventListener("click", FastSwim);
+
+function HighJump() {
+    window.ShipsAPI.gameClient.gameClient.sailorMe.jumpSpeed = 20;
+}
+document.querySelector("#high-jump").addEventListener("click", HighJump);
+
+function LowGravity() {
+    window.ShipsAPI.gameClient.gameClient.sailorMe.gravity = 1;
+}
+document.querySelector("#low-gravity").addEventListener("click", LowGravity);
+
+function Spectate() {
+    window.ShipsAPI.gameClient.gameClient.spectator.isOn = true;
+}
+document.querySelector("#spectate").addEventListener("click", Spectate);
+
+function PReset() {
+    window.onkeydown = (e) => {
+        if (e.key === 'r') {
+            window.ShipsAPI.gameClient.gameClient.gameSocket.sendRequestResetPosition();
+        }
+    };
+}
+document.querySelector("#p-reset").addEventListener("click", PReset);
+
+function AutoSafety() {
+    let intervalId = setInterval(() => {
+        if (window.ShipsAPI.gameClient.gameClient.sailorMe.health <= 60) {
+            window.ShipsAPI.gameClient.gameSocket.sendRequestResetPosition();
+        }
+    }, 1);
+}
+document.querySelector("#autos").addEventListener("click", AutoSafety);
+
+function NoMap() {
+    setInterval(() => {
+        window.ShipsAPI.gameClient.gameClient.mapSize = -1000;
+    }, 0);
+    setInterval(() => {
+        window.ShipsAPI.gameClient.gameClient.mapSizeSpeed = -1000;
+    }, 0);
+}
+document.querySelector("#nomap").addEventListener("click", NoMap);
+
+function Fly() {
+    let fly = false;
+    window.onkeydown = (e) => {
+        if (e.code === 'Space') {
+            fly = !fly;
+            if (fly) {
+                window.ShipsAPI.gameClient.gameClient.sailorMe.gravity = -4;
+            } else {
+                window.ShipsAPI.gameClient.gameClient.sailorMe.gravity = 4;
+            }
+        }
+    };
+}
+document.querySelector("#fly").addEventListener("click", Fly);
